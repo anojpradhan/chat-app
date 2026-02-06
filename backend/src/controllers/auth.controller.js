@@ -1,3 +1,6 @@
+import User from "../models/user.model";
+import bcrypt from "bcryptjs";
+
 export const register = async (req, res) => {
   const { fullName, email, password } = req.body;
 
@@ -15,9 +18,22 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "invalid email format" });
     }
 
-    // const user =
+    const userWithSameEmail = User.findOne(email);
+    if (userWithSameEmail) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPwd = await bcrypt.hash(password, salt);
+
+    const newUser = User.create({ fullname, email, password: hashedPwd });
+
+    if (newUser) {
+      return newUser;
+    } else {
+      res.status(400).json({ message: "Data is invalid" });
+    }
   } catch (error) {
     console.log("error registering ", error);
   }
-  res.send("Regsiter happening haii ");
 };
