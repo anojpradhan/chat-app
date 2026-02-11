@@ -1,4 +1,5 @@
-import User from "../models/user.model";
+import { generateToken } from "../lib/utils.js";
+import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 
 export const register = async (req, res) => {
@@ -18,7 +19,7 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "invalid email format" });
     }
 
-    const userWithSameEmail = User.findOne(email);
+    const userWithSameEmail = await User.findOne({ email });
     if (userWithSameEmail) {
       return res.status(400).json({ message: "Email already exists" });
     }
@@ -26,14 +27,22 @@ export const register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPwd = await bcrypt.hash(password, salt);
 
-    const newUser = User.create({ fullname, email, password: hashedPwd });
+    const newUser = User.create({ fullName, email, password: hashedPwd });
 
     if (newUser) {
-      return newUser;
+      generateToken((await newUser)._id, res);
+      (await newUser).save();
+      res.status(201).json({
+        _id: (await newUser).id,
+        fullName: (await newUser).fullName,
+        email: (await newUser).email,
+        profilePic: (await newUser).profilePic,
+      });
     } else {
       res.status(400).json({ message: "Data is invalid" });
     }
   } catch (error) {
     console.log("error registering ", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
