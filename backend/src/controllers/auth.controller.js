@@ -30,8 +30,9 @@ export const register = async (req, res) => {
     const newUser = User.create({ fullName, email, password: hashedPwd });
 
     if (newUser) {
-      generateToken((await newUser)._id, res);
-      (await newUser).save();
+      // suru ma user save garney ani matra token cookie banuney persistence ko lagi
+      const savedUser = (await newUser).save();
+      generateToken((await savedUser)._id, res);
       res.status(201).json({
         _id: (await newUser).id,
         fullName: (await newUser).fullName,
